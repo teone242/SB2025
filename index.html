@@ -2,32 +2,175 @@
 <html lang="ar">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>صلى الله عليه وسلم</title>
+  <title>حاسبة سعر بنجر السكر</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       direction: rtl;
-      background-color: #f0f0f0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
+      background-color: #f4f4f4;
+      padding: 20px;
+      position: relative;
+      overflow-x: hidden;
     }
 
-    .message {
-      font-size: 30px;
+    /* خلفية اللوجو A_S */
+    body::before {
+      content: "A_S";
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-30deg);
+      font-size: 300px;
       font-weight: bold;
-      color: #4CAF50; /* اللون الأخضر */
+      font-style: italic;
+      color: rgba(0, 128, 0, 0.1); /* أخضر شفاف */
+      z-index: 0;
+      pointer-events: none;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .container {
+      max-width: 600px;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      position: relative;
+      z-index: 1;
+    }
+
+    input, button {
+      padding: 10px;
+      margin: 5px 0;
+      width: 100%;
+    }
+
+    .result {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+
+    .nqlah {
+      margin-bottom: 20px;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 10px;
+      position: relative;
+    }
+
+    .delete-btn {
+      background-color: crimson;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      cursor: pointer;
+      width: auto;
+      position: absolute;
+      left: 0;
+      top: 0;
     }
   </style>
 </head>
 <body>
-
-  <div class="message">
-    صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ
+  <div class="container">
+    <h2>حاسبة سعر طن بنجر السكر</h2>
+    <div id="inputs"></div>
+    <button onclick="addNqlah()">➕ إضافة نقلة</button>
+    <button onclick="calculateTotal()">🧮 احسب السعر</button>
+    <div class="result" id="result"></div>
   </div>
 
+  <script>
+    let count = 0;
+
+    function addNqlah() {
+      const container = document.getElementById("inputs");
+      const div = document.createElement("div");
+      div.classList.add("nqlah");
+      div.setAttribute("id", `nqlah-${count}`);
+      div.innerHTML = `
+        <button class="delete-btn" onclick="deleteNqlah(${count})">🗑 حذف</button>
+        <label>تاريخ التوريد:</label>
+        <input type="date" id="date-${count}">
+        <label>الوزن بالكيلو:</label>
+        <input type="number" id="weight-${count}" placeholder="مثلاً: 1000">
+        <label>نسبة السكر:</label>
+        <input type="number" step="0.1" id="sugar-${count}" placeholder="مثلاً: 17">
+        <label>نسبة الشوائب:</label>
+        <input type="number" step="0.1" id="impurity-${count}" placeholder="مثلاً: 2.5">
+      `;
+      container.appendChild(div);
+      count++;
+    }
+
+    function deleteNqlah(index) {
+      const el = document.getElementById(`nqlah-${index}`);
+      if (el) el.remove();
+    }
+
+    function calculateTotal() {
+      let total = 0;
+      let totalWeight = 0;
+      let results = '';
+      for (let i = 0; i < count; i++) {
+        const dateInput = document.getElementById(`date-${i}`);
+        const weightInput = document.getElementById(`weight-${i}`);
+        const sugarInput = document.getElementById(`sugar-${i}`);
+        const impurityInput = document.getElementById(`impurity-${i}`);
+
+        if (!dateInput) continue;
+
+        const date = new Date(dateInput.value);
+        const weight = parseFloat(weightInput.value) || 0;
+        const sugar = parseFloat(sugarInput.value) || 0;
+        const impurity = parseFloat(impurityInput.value) || 0;
+
+        let pricePerTon = 2400;
+
+        // علاوة التوريد
+        if (date >= new Date('2025-02-15') && date <= new Date('2025-03-15')) {
+          pricePerTon += 300;
+        } else if (date >= new Date('2025-03-16') && date <= new Date('2025-04-03')) {
+          pricePerTon += 250;
+        } else if (date >= new Date('2025-04-04') && date <= new Date('2025-04-20')) {
+          pricePerTon += 150;
+        } else if (date >= new Date('2025-04-21') && date <= new Date('2025-07-30')) {
+          // لا شيء يُضاف
+        }
+
+        // السكر
+        if (sugar > 16) {
+          pricePerTon += (sugar - 16) * 100;
+        } else if (sugar < 16) {
+          pricePerTon -= (16 - sugar) * 50;
+        }
+
+        // الشوائب
+        if (impurity <= 2) {
+          pricePerTon += 50;
+        } else if (impurity <= 3) {
+          pricePerTon += 35;
+        } else if (impurity <= 4) {
+          pricePerTon += 20;
+        } else if (impurity <= 5) {
+          pricePerTon += 10;
+        }
+
+        const tonWeight = weight / 1000;
+        const totalPrice = pricePerTon * tonWeight;
+        total += totalPrice;
+        totalWeight += weight;
+
+        results += `🔹 النقلة ${i + 1}: سعر الطن = ${pricePerTon.toFixed(2)} جنيه، السعر الكلي = ${totalPrice.toFixed(2)} جنيه<br>`;
+      }
+
+      results += `<br>📦 <strong>إجمالي الوزن: ${totalWeight.toFixed(2)} كجم</strong><br>`;
+      results += `<br>✅ <strong>السعر الإجمالي لكل النقلات: ${total.toFixed(2)} جنيه مصري</strong>`;
+      document.getElementById("result").innerHTML = results;
+    }
+
+    window.onload = addNqlah;
+  </script>
 </body>
 </html>
